@@ -1,0 +1,17 @@
+# Configuration Folder
+bazarr
+configuration
+heimdall
+homepage
+jellyfin
+letsencrypt
+ombi
+prowlarr
+qbittorrent
+radarr
+secrets
+sonarr
+transmission
+
+# Docker env
+.env
