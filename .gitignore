@@ -12,6 +12,6 @@ radarr
 secrets
 sonarr
 transmission
-
+traefik
 # Docker env
 .env
