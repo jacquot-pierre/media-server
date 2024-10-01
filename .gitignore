@@ -15,3 +15,7 @@ transmission
 traefik
 # Docker env
 .env
+log
+sharry
+data
+cache

@@ -8,7 +8,7 @@ services:
     # Enables the web UI and tells Traefik to listen to docker
     command:
       #- "--log.level=DEBUG"
-      # - "--api.insecure=true"
+      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -26,7 +26,7 @@ services:
       # The HTTP port
       - "443:443"
       # The Web UI (enabled by --api.insecure=true)
-      # - "8080:8080"
+      - "8080:8080"
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
@@ -52,35 +52,35 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
     restart: unless-stopped
 
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: 256M
-        reservations:
-          memory: 64M
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/France
-    volumes:
-      - ./homepage/config:/app/config # Make sure your local config directory exists
-      - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.homepage.rule=Host(`seigneurguerande.fr`)
-      - traefik.http.services.homepage.loadbalancer.server.port=3000
-      - traefik.http.routers.homepage.entrypoints=websecure
-      - traefik.http.routers.homepage.tls.certresolver=myresolver
-      # Only whitelist local adresses
-      - "traefik.http.routers.homepage.middlewares=local-ipwhitelist"
+  # homepage:
+  #   image: ghcr.io/gethomepage/homepage:latest
+  #   container_name: homepage
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "0.2"
+  #         memory: 256M
+  #       reservations:
+  #         memory: 64M
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/France
+  #   volumes:
+  #     - ./homepage/config:/app/config # Make sure your local config directory exists
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
+  #   restart: unless-stopped
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.homepage.rule=Host(`seigneurguerande.fr`)
+  #     - traefik.http.services.homepage.loadbalancer.server.port=3000
+  #     - traefik.http.routers.homepage.entrypoints=websecure
+  #     - traefik.http.routers.homepage.tls.certresolver=myresolver
+  #     # Only whitelist local adresses
+  #     - "traefik.http.routers.homepage.middlewares=local-ipwhitelist"
 
   jellyfin:
-      image: linuxserver/jellyfin:10.8.13
+      image: linuxserver/jellyfin:10.9.11
       container_name: jellyfin
       deploy:
         resources:
@@ -102,6 +102,7 @@ services:
         - "/dev/dri:/dev/dri"
       restart: unless-stopped
       labels:
+      - "traefik.http.middlewares.local-ipwhitelist.ipwhitelist.sourcerange=${IP_WHITELIST}"
       - traefik.enable=true
       - traefik.http.routers.jellyfin.rule=Host(`jellyfin.seigneurguerande.fr`)
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
@@ -115,44 +116,44 @@ services:
       - homepage.href=https://jellyfin.seigneurguerande.fr
       - homepage.description=Jellyfin Media server
 
-  ombi:
-    image: lscr.io/linuxserver/ombi:4.43.5
-    container_name: ombi
-    deploy:
-      resources:
-        limits:
-          cpus: "0.4"
-          memory: 512M
-        reservations:
-          memory: 128M
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-    volumes:
-      - ./ombi:/config
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.ombi.rule=Host(`ombi.seigneurguerande.fr`)
-      - traefik.http.services.ombi.loadbalancer.server.port=3579
-      - traefik.http.routers.ombi.entrypoints=websecure
-      - traefik.http.routers.ombi.tls.certresolver=myresolver
-      # Only whitelist local adresses
-      - "traefik.http.middlewares.local-ipwhitelist.ipwhitelist.sourcerange=${IP_WHITELIST}"
-      - "traefik.http.routers.ombi.middlewares=local-ipwhitelist"
-      - homepage.group=Media
-      - homepage.name=ombi
-      - homepage.icon=ombi.png
-      - homepage.href=https://ombi.seigneurguerande.fr
-      - homepage.description=Media server
-      - homepage.widget.type=ombi
-      - homepage.widget.url=https://ombi.seigneurguerande.fr
-      - homepage.widget.key=${OMBI_KEY}
-      - homepage.widget.fields=["pending","approved","available"]
+  # ombi:
+  #   image: lscr.io/linuxserver/ombi:4.43.5
+  #   container_name: ombi
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "0.4"
+  #         memory: 512M
+  #       reservations:
+  #         memory: 128M
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #   volumes:
+  #     - ./ombi:/config
+  #   restart: unless-stopped
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.ombi.rule=Host(`ombi.seigneurguerande.fr`)
+  #     - traefik.http.services.ombi.loadbalancer.server.port=3579
+  #     - traefik.http.routers.ombi.entrypoints=websecure
+  #     - traefik.http.routers.ombi.tls.certresolver=myresolver
+  #     # Only whitelist local adresses
+  #     - "traefik.http.middlewares.local-ipwhitelist.ipwhitelist.sourcerange=${IP_WHITELIST}"
+  #     - "traefik.http.routers.ombi.middlewares=local-ipwhitelist"
+  #     - homepage.group=Media
+  #     - homepage.name=ombi
+  #     - homepage.icon=ombi.png
+  #     - homepage.href=https://ombi.seigneurguerande.fr
+  #     - homepage.description=Media server
+  #     - homepage.widget.type=ombi
+  #     - homepage.widget.url=https://ombi.seigneurguerande.fr
+  #     - homepage.widget.key=${OMBI_KEY}
+  #     - homepage.widget.fields=["pending","approved","available"]
 
   sonarr:
-    image: ghcr.io/linuxserver/sonarr:4.0.1
+    image: ghcr.io/linuxserver/sonarr:4.0.9
     container_name: sonarr
     deploy:
       resources:
@@ -190,7 +191,7 @@ services:
       - homepage.widget.enableQueue=true
   
   radarr:
-      image: linuxserver/radarr:5.3.6
+      image: linuxserver/radarr:5.11.0
       container_name: radarr
       deploy:
         resources:
@@ -227,7 +228,7 @@ services:
         - homepage.widget.enableQueue=true
     
   bazarr:
-    image: linuxserver/bazarr:1.4.2
+    image: linuxserver/bazarr:1.4.4
     container_name: bazarr
     deploy:
       resources:
@@ -263,7 +264,7 @@ services:
       - homepage.widget.fields=["missingEpisodes","missingMovies"]
 
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:1.13.3
+    image: lscr.io/linuxserver/prowlarr:1.24.3
     container_name: prowlarr
     environment:
       - PUID=1000
@@ -343,41 +344,3 @@ services:
       - homepage.href=https://transmission.seigneurguerande.fr
       - homepage.description=Transmission server
 
-  # qbittorrent:
-  #   image: lscr.io/linuxserver/qbittorrent:4.6.2
-  #   container_name: qbittorrent
-  #   network_mode: "service:gluetun"
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=Etc/UTC
-  #     - WEBUI_PORT=9092
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: "0.5"
-  #         memory: 256M
-  #       reservations:
-  #         memory: 128M
-  #   volumes:
-  #     - /qbittorrent/config:/config
-  #     - /data/qbittorrent/downloads:/downloads/complete
-  #     - /data/qbittorrent/downloads/incomplete:/downloads/incomplete
-  #   restart: unless-stopped
-  #   labels:
-  #     - traefik.enable=true
-  #     - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.seigneurguerande.fr`)
-  #     - traefik.http.services.qbittorrent.loadbalancer.server.port=9092
-  #     - traefik.http.routers.qbittorrent.entrypoints=websecure
-  #     - traefik.http.routers.qbittorrent.tls.certresolver=myresolver
-  #     - "traefik.http.routers.qbittorrent.middlewares=local-ipwhitelist"
-  #     - homepage.group=Tools
-  #     - homepage.name=qbittorrent
-  #     - homepage.icon=qbittorrent.png
-  #     - homepage.href=https://qbittorrent.seigneurguerande.fr
-  #     - homepage.description=Qbittorrent server
-  #     - homepage.widget.type=qbittorrent
-  #     - homepage.widget.url=https://qbittorrent.seigneurguerande.fr
-  #     - homepage.widget.username=
-  #     - homepage.widget.password=
-  #     - homepage.widget.fields=["leech", "download", "seed", "upload"]
