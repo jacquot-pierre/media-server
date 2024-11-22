@@ -169,7 +169,7 @@ services:
       - /data/media/anime:/anime
       - /data/media/tvshows:/tvshows
       # - /data/transmission/downloads/complete:/downloads/complete
-      - /data/qbittorrent/downloads/complete:/downloads/complete
+      - /data/qbittorrent/downloads:/downloads
     restart: unless-stopped
     labels:
       - traefik.enable=true
@@ -363,8 +363,7 @@ services:
           memory: 128M
     volumes:
       - /qbittorrent/config:/config
-      - /data/qbittorrent/downloads/complete:/downloads/complete
-      - /data/qbittorrent/downloads/incomplete:/downloads/incomplete
+      - /data/qbittorrent/downloads:/downloads
     restart: unless-stopped
     labels:
       - traefik.enable=true
