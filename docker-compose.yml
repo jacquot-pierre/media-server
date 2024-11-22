@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   reverse-proxy:
     # The official v2.11 Traefik docker image
@@ -80,7 +78,7 @@ services:
   #     - "traefik.http.routers.homepage.middlewares=local-ipwhitelist"
 
   jellyfin:
-      image: linuxserver/jellyfin:10.9.11
+      image: linuxserver/jellyfin:10.10.1
       container_name: jellyfin
       deploy:
         resources:
@@ -170,7 +168,8 @@ services:
       - ./sonarr:/config
       - /data/media/anime:/anime
       - /data/media/tvshows:/tvshows
-      - /data/transmission/downloads/complete:/downloads/complete
+      # - /data/transmission/downloads/complete:/downloads/complete
+      - /data/qbittorrent/downloads/complete:/downloads/complete
     restart: unless-stopped
     labels:
       - traefik.enable=true
@@ -207,7 +206,8 @@ services:
       volumes:
         - ./radarr:/config
         - /data/media/movies:/movies
-        - /data/transmission/downloads/complete:/downloads/complete
+        # - /data/transmission/downloads/complete:/downloads/complete
+        - /data/qbittorrent/downloads/complete:/downloads/complete
       restart: unless-stopped
       labels:
         - traefik.enable=true
@@ -315,32 +315,61 @@ services:
       - SERVER_COUNTRIES=Netherlands
     restart: unless-stopped
 
-  transmission:
-    image: lscr.io/linuxserver/transmission:4.0.5
+  # transmission:
+  #   image: lscr.io/linuxserver/transmission:4.0.5
+  #   network_mode: "service:gluetun"
+  #   container_name: transmission
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/France
+  #     - USER=${TRANSMISSION_USER}
+  #     - PASS=${TRANSMISSION_PASSWORD}
+  #     - PEERPORT=6035
+  #   volumes:
+  #     - ./transmission/config:/config
+  #     - /data/transmission/downloads:/downloads
+  #     - ./transmission/watch:/watch
+  #   restart: unless-stopped
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.transmission.rule=Host(`transmission.seigneurguerande.fr`)
+  #     - traefik.http.services.transmission.loadbalancer.server.port=9091
+  #     - traefik.http.routers.transmission.entrypoints=websecure
+  #     - traefik.http.routers.transmission.tls.certresolver=myresolver
+  #     - "traefik.http.routers.transmission.middlewares=local-ipwhitelist"
+  #     - homepage.group=Tools
+  #     - homepage.name=qbittorrent
+  #     - homepage.icon=qbittorrent.png
+  #     - homepage.href=https://transmission.seigneurguerande.fr
+  #     - homepage.description=Transmission server
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.0.1
+    container_name: qbittorrent
     network_mode: "service:gluetun"
-    container_name: transmission
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/France
-      - USER=${TRANSMISSION_USER}
-      - PASS=${TRANSMISSION_PASSWORD}
-      - PEERPORT=6035
+      - TZ=Etc/UTC
+      - WEBUI_PORT=9092
+      - TORRENTING_PORT=6035
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          memory: 128M
     volumes:
-      - ./transmission/config:/config
-      - /data/transmission/downloads:/downloads
-      - ./transmission/watch:/watch
+      - /qbittorrent/config:/config
+      - /data/qbittorrent/downloads/complete:/downloads/complete
+      - /data/qbittorrent/downloads/incomplete:/downloads/incomplete
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.transmission.rule=Host(`transmission.seigneurguerande.fr`)
-      - traefik.http.services.transmission.loadbalancer.server.port=9091
-      - traefik.http.routers.transmission.entrypoints=websecure
-      - traefik.http.routers.transmission.tls.certresolver=myresolver
-      - "traefik.http.routers.transmission.middlewares=local-ipwhitelist"
-      - homepage.group=Tools
-      - homepage.name=qbittorrent
-      - homepage.icon=qbittorrent.png
-      - homepage.href=https://transmission.seigneurguerande.fr
-      - homepage.description=Transmission server
-
+      - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.seigneurguerande.fr`)
+      - traefik.http.services.qbittorrent.loadbalancer.server.port=9092
+      - traefik.http.routers.qbittorrent.entrypoints=websecure
+      - traefik.http.routers.qbittorrent.tls.certresolver=myresolver
+      - "traefik.http.routers.qbittorrent.middlewares=local-ipwhitelist"
