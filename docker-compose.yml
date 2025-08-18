@@ -31,24 +31,24 @@ services:
       - "./letsencrypt:/letsencrypt"
 
   # Allow homepage to securily access docker socket without root users.
-  dockerproxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy:latest
-    container_name: dockerproxy
-    deploy:
-      resources:
-        limits:
-          cpus: "0.1"
-          memory: 64M
-        reservations:
-          memory: 16M
-    environment:
-      - CONTAINERS=1 # Allow access to viewing containers
-      - POST=0 # Disallow any POST operations (effectively read-only)
-    ports:
-      - 127.0.0.1:2375:2375
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
-    restart: unless-stopped
+  # dockerproxy:
+  #   image: ghcr.io/tecnativa/docker-socket-proxy:latest
+  #   container_name: dockerproxy
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "0.1"
+  #         memory: 64M
+  #       reservations:
+  #         memory: 16M
+  #   environment:
+  #     - CONTAINERS=1 # Allow access to viewing containers
+  #     - POST=0 # Disallow any POST operations (effectively read-only)
+  #   ports:
+  #     - 127.0.0.1:2375:2375
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro # Mounted as read-only
+  #   restart: unless-stopped
 
   # homepage:
   #   image: ghcr.io/gethomepage/homepage:latest
@@ -96,6 +96,8 @@ services:
         - /data/media/tvshows:/data/tvshows
         - /data/media/movies:/data/movies
         - /data/media/anime:/data/anime
+      # ports:
+      #   - 8096:8096
       devices:
         - "/dev/dri:/dev/dri"
       restart: unless-stopped
@@ -108,11 +110,6 @@ services:
       - traefik.http.routers.jellyfin.tls.certresolver=myresolver
       # Only Whitelist relevent adresses
       - "traefik.http.routers.jellyfin.middlewares=local-ipwhitelist"
-      - homepage.group=Media
-      - homepage.name=jellyfin
-      - homepage.icon=jellyfin.png
-      - homepage.href=https://jellyfin.seigneurguerande.fr
-      - homepage.description=Jellyfin Media server
 
   # ombi:
   #   image: lscr.io/linuxserver/ombi:4.43.5
@@ -188,6 +185,34 @@ services:
       - homepage.widget.key=${SONARR_KEY}
       - homepage.widget.fields=["wanted","queued","series"]
       - homepage.widget.enableQueue=true
+  
+  # kapowarr:
+  #   image: mrcas/kapowarr:latest
+  #   container_name: kapowarr
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "0.2"
+  #         memory: 256M
+  #       reservations:
+  #         memory: 64M
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/France
+  #   volumes:
+  #     - ./kapowarr:/config
+  #     - "kapowarr-db:/app/db"
+  #     - /data/media/comics:/comics-1"
+  #     - /data/qbittorrent/downloads/complete:/app/temp_downloads
+  #   restart: unless-stopped
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.kapowarr.rule=Host(`kapowarr.seigneurguerande.fr`)
+  #     - traefik.http.services.kapowarr.loadbalancer.server.port=5656
+  #     - traefik.http.routers.kapowarr.entrypoints=websecure
+  #     - traefik.http.routers.kapowarr.tls.certresolver=myresolver
+  #     - "traefik.http.routers.kapowarr.middlewares=local-ipwhitelist"
   
   radarr:
       image: linuxserver/radarr:5.11.0
@@ -301,8 +326,10 @@ services:
     image: qmcgaw/gluetun:v3.35
     container_name: gluetun
     ports:
-      - 6035:6035
-      - 6035:6035/udp
+      # - 6035:6035
+      # - 6035:6035/udp
+      - 39269:39269
+      - 39269:39269/udp
     cap_add:
       - NET_ADMIN
     environment:
@@ -311,8 +338,10 @@ services:
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADRESSES}
-      - FIREWALL_VPN_INPUT_PORTS=6035
+      - FIREWALL_VPN_INPUT_PORTS=39269
       - SERVER_COUNTRIES=Netherlands
+    devices:
+      - /dev/net/tun:/dev/net/tun
     restart: unless-stopped
 
   # transmission:
@@ -344,6 +373,7 @@ services:
   #     - homepage.href=https://transmission.seigneurguerande.fr
   #     - homepage.description=Transmission server
 
+
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:5.0.1
     container_name: qbittorrent
@@ -353,7 +383,7 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - WEBUI_PORT=9092
-      - TORRENTING_PORT=6035
+      - TORRENTING_PORT=39269
     deploy:
       resources:
         limits:
@@ -372,3 +402,6 @@ services:
       - traefik.http.routers.qbittorrent.entrypoints=websecure
       - traefik.http.routers.qbittorrent.tls.certresolver=myresolver
       - "traefik.http.routers.qbittorrent.middlewares=local-ipwhitelist"
+
+# volumes:
+#   kapowarr-db:
