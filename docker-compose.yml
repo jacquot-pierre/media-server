@@ -96,6 +96,7 @@ services:
         - /data/media/tvshows:/data/tvshows
         - /data/media/movies:/data/movies
         - /data/media/anime:/data/anime
+        - /data/media/youtube:/data/youtube
       # ports:
       #   - 8096:8096
       devices:
@@ -110,6 +111,25 @@ services:
       - traefik.http.routers.jellyfin.tls.certresolver=myresolver
       # Only Whitelist relevent adresses
       - "traefik.http.routers.jellyfin.middlewares=local-ipwhitelist"
+
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat:v2025.6.6
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/France
+    volumes:
+      - ./pinchflat:/config
+      - /data/media/tvshows:/downloads
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pinchflat.rule=Host(`pinchflat.seigneurguerande.fr`)
+      - traefik.http.services.pinchflat.loadbalancer.server.port=8945
+      - traefik.http.routers.pinchflat.entrypoints=websecure
+      - traefik.http.routers.pinchflat.tls.certresolver=myresolver
+      # Only Whitelist relevent adresses
+      - "traefik.http.routers.pinchflat.middlewares=local-ipwhitelist"
 
   # ombi:
   #   image: lscr.io/linuxserver/ombi:4.43.5
